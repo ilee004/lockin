@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lock in</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #ededea;
+  --border: #e0deda;
+  --text: #1a1a1a;
+  --muted: #9a9690;
+  --accent: #1a1a1a;
+  --gold: #c9a84c;
+  --correct: #2d7a4f;
+  --wrong: #c0392b;
+  --correct-bg: #eaf5ee;
+  --wrong-bg: #fdecea;
+  --nav-h: 56px;
+  --bnav-h: 72px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); }
+
+/* ── LAYOUT ── */
+#app { height: 100vh; display: flex; flex-direction: column; }
+.tab-content { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(var(--bnav-h) + 8px); }
+.tab-content.active { display: block; }
+
+/* ── TOP NAV ── */
+.top-nav {
+  height: var(--nav-h); background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; flex-shrink: 0; z-index: 50;
+}
+.top-nav-title { font-size: 20px; font-weight: 900; letter-spacing: -.02em; }
+.top-nav-sub { font-size: 10px; color: rgba(255,255,255,.5); letter-spacing: .1em; }
+.top-nav-right { display: flex; gap: 10px; }
+.icon-btn { background: none; border: none; color: rgba(255,255,255,.7); font-size: 20px; cursor: pointer; padding: 6px; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  height: var(--bnav-h); background: var(--accent);
+  display: flex; align-items: stretch; flex-shrink: 0;
+  position: relative; z-index: 50;
+}
+.bnav-btn {
+  flex: 1; background: none; border: none; color: rgba(255,255,255,.45);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; transition: color .15s; padding-bottom: 8px;
+  letter-spacing: .04em;
+}
+.bnav-btn.active { color: var(--gold); }
+.bnav-icon { font-size: 22px; }
+
+/* ── SECTION LABEL ── */
+.sec { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+
+/* ── CARD ── */
+.card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+
+/* ── BUTTONS ── */
+.btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s, transform .1s; text-align: center; }
+.btn:active { opacity: .8; transform: scale(.98); }
+.btn:disabled { opacity: .35; }
+.btn-dark { background: var(--accent); color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-gold { background: var(--gold); color: #fff; }
+.btn-sm { padding: 8px 14px; font-size: 12px; width: auto; display: inline-block; border-radius: 6px; }
+
+/* ── INPUT ── */
+.inp { width: 100%; padding: 13px 14px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Noto Sans JP', sans-serif; font-size: 15px; color: var(--text); outline: none; transition: border-color .15s; }
+.inp:focus { border-color: var(--accent); }
+.inp-label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+
+/* ════════════════════════════
+   HOME TAB
+════════════════════════════ */
+#tab-home { padding: 0; }
+.home-hero {
+  background: var(--accent); color: #fff;
+  padding: 24px 20px 28px;
+}
+.home-hero-title { font-size: 32px; font-weight: 900; letter-spacing: -.03em; line-height: 1; margin-bottom: 4px; }
+.home-hero-sub { font-size: 11px; color: rgba(255,255,255,.5); letter-spacing: .1em; }
+.home-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); margin-bottom: 0; }
+.stat-cell { background: var(--surface); padding: 14px 10px; text-align: center; }
+.stat-n { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--accent); line-height: 1; margin-bottom: 3px; }
+.stat-l { font-size: 9px; color: var(--muted); letter-spacing: .06em; }
+.home-body { padding: 20px 16px; }
+.subject-card {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.subject-card:active { border-color: var(--accent); }
+.subject-card-left { flex: 1; }
+.subject-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.subject-books { font-size: 11px; color: var(--muted); }
+.subject-today { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--gold); }
+.add-subject-btn { border: 1.5px dashed var(--border); background: transparent; border-radius: 12px; padding: 16px; width: 100%; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; text-align: center; transition: border-color .15s; }
+.add-subject-btn:active { border-color: var(--accent); color: var(--accent); }
+
+/* ════════════════════════════
+   TODO TAB
+════════════════════════════ */
+#tab-todo { padding: 16px; }
+.todo-section { margin-bottom: 12px; }
+.todo-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; cursor: pointer; transition: border-color .15s;
+}
+.todo-section-header.open { border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
+.todo-section-header:active { border-color: var(--accent); }
+.todo-section-title { font-size: 13px; font-weight: 700; }
+.todo-section-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.todo-section-count { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--gold); font-weight: 500; }
+.todo-section-arrow { font-size: 12px; color: var(--muted); transition: transform .2s; margin-left: 8px; }
+.todo-section-arrow.open { transform: rotate(180deg); }
+.todo-list { background: var(--surface); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 10px 10px; display: none; }
+.todo-list.open { display: block; }
+.todo-item { display: flex; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+.todo-item:last-child { border-bottom: none; }
+.todo-qnum { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; min-width: 36px; }
+.todo-stage { font-size: 10px; color: var(--muted); flex: 1; }
+.todo-next { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+.todo-item.today .todo-next { color: var(--gold); font-weight: 700; }
+.start-bar { position: fixed; bottom: var(--bnav-h); left: 0; right: 0; padding: 12px 16px; background: var(--bg); border-top: 1px solid var(--border); z-index: 40; }
+
+/* ════════════════════════════
+   ADD TAB
+════════════════════════════ */
+#tab-add { padding: 16px; }
+.book-card-sel {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 15px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s, background .15s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.book-card-sel:active { border-color: var(--accent); }
+.book-card-sel.selected { border-color: var(--accent); background: #f0efeb; }
+.book-card-subj { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+.book-card-name { font-size: 14px; font-weight: 700; }
+.book-card-range { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.book-card-check { font-size: 18px; opacity: 0; transition: opacity .15s; }
+.book-card-sel.selected .book-card-check { opacity: 1; }
+.add-form { background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 16px; }
+.range-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 16px; }
+.range-sep { text-align: center; color: var(--muted); font-size: 14px; padding-top: 20px; }
+.format-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.format-btn { padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; background: transparent; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; transition: all .15s; color: var(--muted); }
+.format-btn.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.stage-init-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ════════════════════════════
+   LIST TAB
+════════════════════════════ */
+#tab-list { padding: 0; }
+.list-filters { display: flex; gap: 6px; padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border); }
+.list-filters::-webkit-scrollbar { display: none; }
+.filt { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; cursor: pointer; flex-shrink: 0; font-weight: 700; }
+.filt.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.list-item { display: flex; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); gap: 10px; cursor: pointer; background: var(--surface); transition: background .1s; }
+.list-item:active { background: var(--surface2); }
+.list-num { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; min-width: 36px; }
+.list-info { flex: 1; min-width: 0; }
+.list-book { font-size: 10px; color: var(--muted); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-stage { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-right: 4px; }
+.list-next { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.list-next.today { color: var(--gold); font-weight: 700; }
+.list-arrow { color: var(--muted); font-size: 14px; }
+.has-content { color: var(--correct); font-size: 12px; }
+
+/* ════════════════════════════
+   SETTING TAB
+════════════════════════════ */
+#tab-setting { padding: 16px; }
+.setting-section { margin-bottom: 24px; }
+.sbook-item { background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; padding: 15px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+.sbook-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.sbook-meta { font-size: 11px; color: var(--muted); }
+.sbook-btns { display: flex; gap: 6px; }
+
+/* ════════════════════════════
+   DRILL OVERLAY
+════════════════════════════ */
+#drill-overlay {
+  display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200;
+  flex-direction: column;
+}
+#drill-overlay.open { display: flex; }
+.drill-nav { height: var(--nav-h); background: var(--accent); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; }
+.drill-nav-left { color: rgba(255,255,255,.7); font-size: 14px; font-family: 'DM Mono', monospace; }
+.drill-close { background: none; border: none; color: rgba(255,255,255,.7); font-size: 24px; cursor: pointer; }
+.drill-progress-wrap { height: 3px; background: rgba(255,255,255,.2); flex-shrink: 0; }
+.drill-progress-fill { height: 100%; background: var(--gold); transition: width .3s; }
+.drill-body { flex: 1; overflow-y: auto; padding: 24px 20px 16px; display: flex; flex-direction: column; background: var(--accent); }
+.drill-context { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .08em; margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+.drill-book-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-bottom: 12px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+.drill-qnum { font-size: 64px; font-weight: 900; color: #fff; letter-spacing: -.04em; line-height: 1; margin-bottom: 8px; }
+.drill-stage { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 16px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.8); }
+
+/* Question content area */
+.drill-question-box { background: rgba(255,255,255,.07); border-radius: 12px; padding: 16px; margin-bottom: 16px; flex: 1; min-height: 80px; }
+.drill-question-text { font-size: 14px; color: #fff; line-height: 1.7; }
+.drill-no-content { font-size: 12px; color: rgba(255,255,255,.3); text-align: center; padding: 20px 0; }
+
+/* Answer buttons */
+.drill-answers { display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 16px; }
+.drill-ans-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ans-btn { padding: 16px; border: none; border-radius: 10px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .1s, opacity .15s; background: rgba(255,255,255,.12); color: #fff; text-align: left; }
+.ans-btn:active { transform: scale(.97); opacity: .8; }
+.ans-btn.correct-ans { background: var(--correct); }
+.ans-btn.wrong-ans { background: var(--wrong); }
+.ans-btn-ox { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-o { background: var(--correct-bg); color: var(--correct); font-size: 28px; padding: 20px; border: none; border-radius: 10px; cursor: pointer; transition: transform .1s; font-weight: 900; }
+.btn-x { background: var(--wrong-bg); color: var(--wrong); font-size: 28px; padding: 20px; border: none; border-radius: 10px; cursor: pointer; transition: transform .1s; font-weight: 900; }
+.btn-o:active, .btn-x:active { transform: scale(.95); }
+
+/* Result overlay */
+.drill-result { display: none; flex-direction: column; flex: 1; padding: 16px; }
+.drill-result.show { display: flex; }
+.result-badge { font-size: 64px; text-align: center; margin-bottom: 12px; }
+.result-label { font-size: 22px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 4px; }
+.result-next { font-size: 13px; color: rgba(255,255,255,.5); text-align: center; margin-bottom: 24px; }
+.result-explanation { background: rgba(255,255,255,.07); border-radius: 12px; padding: 16px; margin-bottom: 16px; flex: 1; }
+.result-explanation-text { font-size: 13px; color: rgba(255,255,255,.8); line-height: 1.7; }
+.result-no-exp { font-size: 12px; color: rgba(255,255,255,.3); }
+.result-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-next { padding: 16px; border: none; border-radius: 10px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: var(--gold); color: #fff; }
+.btn-history-inline { padding: 16px; border: 1.5px solid rgba(255,255,255,.2); border-radius: 10px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: transparent; color: rgba(255,255,255,.7); }
+
+/* ════════════════════════════
+   QUESTION DETAIL OVERLAY
+════════════════════════════ */
+#detail-overlay {
+  display: none; position: fixed; inset: 0; background: var(--bg); z-index: 150;
+  flex-direction: column;
+}
+#detail-overlay.open { display: flex; }
+.detail-nav { height: var(--nav-h); background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; }
+.detail-nav-title { font-size: 15px; font-weight: 700; }
+.detail-body { flex: 1; overflow-y: auto; padding: 16px; }
+.detail-section { margin-bottom: 20px; }
+.detail-section-title { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
+.detail-field { background: var(--surface2); border-radius: 8px; padding: 12px 14px; font-size: 14px; color: var(--text); line-height: 1.6; min-height: 50px; cursor: pointer; border: 1.5px solid transparent; transition: border-color .15s; }
+.detail-field:active { border-color: var(--accent); }
+.detail-field.empty { color: var(--muted); font-size: 13px; }
+.detail-textarea { width: 100%; padding: 12px 14px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: var(--text); outline: none; resize: none; min-height: 100px; transition: border-color .15s; }
+.detail-textarea:focus { border-color: var(--accent); }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
+.history-date { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+.history-result { font-size: 16px; font-weight: 700; }
+.history-result.o { color: var(--correct); }
+.history-result.x { color: var(--wrong); }
+.history-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
+.correct-ans-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.choice-item { padding: 10px 12px; background: var(--surface2); border-radius: 8px; border: 1.5px solid var(--border); font-size: 13px; cursor: pointer; transition: border-color .15s; }
+.choice-item.correct-choice { border-color: var(--correct); background: var(--correct-bg); }
+
+/* ════════════════════════════
+   MODAL
+════════════════════════════ */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 300; align-items: flex-end; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px 36px; width: 100%; max-height: 88vh; overflow-y: auto; }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+
+/* ════════════════════════════
+   HISTORY SHEET
+════════════════════════════ */
+#history-sheet { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 250; align-items: flex-end; }
+#history-sheet.open { display: flex; }
+.history-sheet-body { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px 20px 40px; width: 100%; max-height: 75vh; overflow-y: auto; }
+.history-sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+/* ════════════════════════════
+   FLASH
+════════════════════════════ */
+.flash { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; font-size: 100px; pointer-events: none; opacity: 0; transition: opacity .08s; }
+.flash.show { opacity: 1; }
+.flash.cf { background: rgba(45,122,79,.15); }
+.flash.wf { background: rgba(192,57,43,.15); }
+
+/* ════════════════════════════
+   STAGE COLORS
+════════════════════════════ */
+.s0 { background: #fff8e1; color: #b8860b; }
+.s1 { background: #e8f5e9; color: #2d7a4f; }
+.s2 { background: #e3f2fd; color: #1565c0; }
+.s3 { background: #f3e5f5; color: #7b1fa2; }
+.s4 { background: #fce4ec; color: #c62828; }
+.s5 { background: #e0f2f1; color: #00695c; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+.empty-emoji { font-size: 48px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+
+<div id="app">
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <div>
+      <div class="top-nav-title">Lock in</div>
+      <div class="top-nav-sub">SPACED REPETITION</div>
+    </div>
+    <div class="top-nav-right">
+      <button class="icon-btn" onclick="openModal('modal-add-book')">＋</button>
+    </div>
+  </div>
+
+  <!-- ══ HOME ══ -->
+  <div class="tab-content active" id="tab-home">
+    <div class="home-hero">
+      <div style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:6px" id="home-date-label"></div>
+      <div class="home-hero-title">宅地建物<br>取引士 試験</div>
+    </div>
+    <div class="home-stats">
+      <div class="stat-cell"><div class="stat-n" id="hs-total">0</div><div class="stat-l">登録済み</div></div>
+      <div class="stat-cell"><div class="stat-n" id="hs-today">0</div><div class="stat-l">今日</div></div>
+      <div class="stat-cell"><div class="stat-n" id="hs-master">0</div><div class="stat-l">習得済み</div></div>
+    </div>
+    <div class="home-body">
+      <div class="sec" style="margin-bottom:12px">科目</div>
+      <div id="subject-cards"></div>
+      <button class="add-subject-btn" onclick="openModal('modal-add-book')">＋ 問題集を追加</button>
+    </div>
+  </div>
+
+  <!-- ══ TODO ══ -->
+  <div class="tab-content" id="tab-todo">
+    <div id="todo-sections" style="padding:16px"></div>
+    <div class="start-bar" id="start-bar" style="display:none">
+      <button class="btn btn-dark" id="start-btn" onclick="startDrillToday()">今日の問題を開始</button>
+    </div>
+  </div>
+
+  <!-- ══ ADD ══ -->
+  <div class="tab-content" id="tab-add">
+    <div style="padding:16px">
+      <div class="sec" style="margin-bottom:12px">問題集を選択</div>
+      <div id="add-book-cards"></div>
+      <div id="add-form-wrap" style="display:none">
+        <div class="add-form">
+          <div class="sec" style="margin-bottom:12px">登録範囲</div>
+          <div class="range-row">
+            <div>
+              <label class="inp-label">開始</label>
+              <input type="number" class="inp" id="add-from" placeholder="1" min="1" max="1000">
+            </div>
+            <div class="range-sep">〜</div>
+            <div>
+              <label class="inp-label">終了</label>
+              <input type="number" class="inp" id="add-to" placeholder="115" min="1" max="1000">
+            </div>
+          </div>
+          <div class="sec" style="margin-bottom:10px">回答形式</div>
+          <div class="format-row" style="margin-bottom:16px">
+            <button class="format-btn active" id="fmt-ox" onclick="setFormat('ox')">○ × 形式</button>
+            <button class="format-btn" id="fmt-4" onclick="setFormat('4')">１２３４ 選択</button>
+          </div>
+          <div class="sec" style="margin-bottom:10px">初期ステージ（既に解いた問題）</div>
+          <div class="stage-init-row" style="margin-bottom:16px">
+            <div>
+              <label class="inp-label">正解回数</label>
+              <input type="number" class="inp" id="add-stage" placeholder="0" min="0" max="5" value="0">
+            </div>
+            <div>
+              <label class="inp-label">次回日付</label>
+              <input type="date" class="inp" id="add-next-date">
+            </div>
+          </div>
+          <button class="btn btn-dark" onclick="registerQuestions()">登録する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LIST ══ -->
+  <div class="tab-content" id="tab-list">
+    <div class="list-filters" id="list-book-filters"></div>
+    <div class="list-filters" style="border-top:none;padding-top:0">
+      <button class="filt active" onclick="filterStatus('all',this)">すべて</button>
+      <button class="filt" onclick="filterStatus('today',this)">今日</button>
+      <button class="filt" onclick="filterStatus('new',this)">未着手</button>
+      <button class="filt" onclick="filterStatus('mastered',this)">習得済み</button>
+      <button class="filt" onclick="filterStatus('history',this)">履歴</button>
+    </div>
+    <div id="list-body"></div>
+  </div>
+
+  <!-- ══ SETTING ══ -->
+  <div class="tab-content" id="tab-setting">
+    <div style="padding:16px">
+      <div class="setting-section">
+        <div class="sec" style="margin-bottom:12px">問題集</div>
+        <div id="setting-books"></div>
+        <button class="btn btn-outline" onclick="openModal('modal-add-book')" style="margin-top:4px">＋ 問題集を追加</button>
+      </div>
+      <div class="setting-section">
+        <div class="sec" style="margin-bottom:12px">データ</div>
+        <button class="btn" style="background:#fff;border:1.5px solid var(--wrong);color:var(--wrong)" onclick="resetAll()">全データをリセット</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="bnav-btn active" id="bnav-home" onclick="switchTab('home')"><span class="bnav-icon">🏠</span>Home</button>
+    <button class="bnav-btn" id="bnav-todo" onclick="switchTab('todo')"><span class="bnav-icon">🔔</span>To do</button>
+    <button class="bnav-btn" id="bnav-add" onclick="switchTab('add')"><span class="bnav-icon">＋</span>Add</button>
+    <button class="bnav-btn" id="bnav-list" onclick="switchTab('list')"><span class="bnav-icon">📋</span>List</button>
+    <button class="bnav-btn" id="bnav-setting" onclick="switchTab('setting')"><span class="bnav-icon">⚙️</span>Setting</button>
+  </div>
+</div>
+
+<!-- ══ DRILL OVERLAY ══ -->
+<div id="drill-overlay">
+  <div class="drill-nav">
+    <div class="drill-nav-left" id="drill-prog-label">0 / 0</div>
+    <button class="drill-close" onclick="closeDrill()">✕</button>
+  </div>
+  <div class="drill-progress-wrap"><div class="drill-progress-fill" id="drill-prog-fill" style="width:0%"></div></div>
+  <div class="drill-body" id="drill-body">
+    <!-- Question view -->
+    <div id="drill-q-view">
+      <div class="drill-context" id="dv-context"></div>
+      <div class="drill-book-tag" id="dv-book"></div>
+      <div class="drill-qnum" id="dv-qnum">—</div>
+      <div class="drill-stage" id="dv-stage"></div>
+      <div class="drill-question-box" id="dv-qbox">
+        <div class="drill-no-content">問題文未登録<br>番号を確認して問題集で解いてください</div>
+      </div>
+      <div class="drill-answers" id="dv-answers"></div>
+    </div>
+    <!-- Result view -->
+    <div id="drill-result-view" style="display:none;flex-direction:column;flex:1">
+      <div class="result-badge" id="rv-badge"></div>
+      <div class="result-label" id="rv-label"></div>
+      <div class="result-next" id="rv-next"></div>
+      <div class="result-explanation" id="rv-exp">
+        <div class="result-no-exp">解説未登録</div>
+      </div>
+      <div class="result-btns" style="margin-top:16px">
+        <button class="btn-history-inline" onclick="openHistorySheet()">履歴</button>
+        <button class="btn-next" onclick="nextQuestion()">次へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DETAIL OVERLAY ══ -->
+<div id="detail-overlay">
+  <div class="detail-nav">
+    <div class="detail-nav-title" id="detail-title"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm btn-dark" onclick="saveDetail()">保存</button>
+      <button class="icon-btn" style="color:var(--muted);font-size:22px" onclick="closeDetail()">✕</button>
+    </div>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<!-- ══ HISTORY SHEET ══ -->
+<div id="history-sheet" onclick="if(event.target===this)closeHistorySheet()">
+  <div class="history-sheet-body">
+    <div class="history-sheet-title" id="hs-title">回答履歴</div>
+    <div id="hs-body"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add Book ══ -->
+<div class="modal-overlay" id="modal-add-book" onclick="if(event.target===this)closeModal('modal-add-book')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">問題集を追加</div>
+    <div style="margin-bottom:14px">
+      <label class="inp-label">科目名</label>
+      <input class="inp" type="text" id="mb-subj" placeholder="例：③法令上の制限">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="inp-label">問題集名</label>
+      <input class="inp" type="text" id="mb-name" placeholder="例：分野別過去問題集">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label class="inp-label">開始番号</label>
+        <input class="inp" type="number" id="mb-from" placeholder="1">
+      </div>
+      <div>
+        <label class="inp-label">終了番号</label>
+        <input class="inp" type="number" id="mb-to" placeholder="115">
+      </div>
+    </div>
+    <button class="btn btn-dark" onclick="saveBook()">追加する</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: Edit Book ══ -->
+<div class="modal-overlay" id="modal-edit-book" onclick="if(event.target===this)closeModal('modal-edit-book')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">問題集を編集</div>
+    <input type="hidden" id="eb-id">
+    <div style="margin-bottom:14px">
+      <label class="inp-label">科目名</label>
+      <input class="inp" type="text" id="eb-subj">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="inp-label">問題集名</label>
+      <input class="inp" type="text" id="eb-name">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><label class="inp-label">開始番号</label><input class="inp" type="number" id="eb-from"></div>
+      <div><label class="inp-label">終了番号</label><input class="inp" type="number" id="eb-to"></div>
+    </div>
+    <button class="btn btn-dark" onclick="updateBook()" style="margin-bottom:10px">保存する</button>
+    <button class="btn" style="background:#fff;border:1.5px solid var(--wrong);color:var(--wrong)" onclick="deleteBook()">この問題集を削除</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════
+// DATA
+// ═══════════════════════════════
+const INTERVALS = [1, 3, 7, 14, 21];
+const SLABELS = ['初回','3日後','1週間後','2週間後','3週間後','習得済み'];
+const SCLS = ['s0','s1','s2','s3','s4','s5'];
+const BOOK_COLORS = ['#c9a84c','#2d7a4f','#1565c0','#7b1fa2','#c0392b','#00695c','#e65100','#37474f'];
+
+function db() {
+  try { return JSON.parse(localStorage.getItem('lockin_v1') || 'null') || {books:[],questions:{}}; }
+  catch(e) { return {books:[],questions:{}}; }
+}
+function save(d) { localStorage.setItem('lockin_v1', JSON.stringify(d)); }
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+function p2(n) { return String(n).padStart(2,'0'); }
+function addDays(s, n) {
+  const d = new Date(s + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  const [,m,d] = s.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
+}
+function bkey(b) { return `${b.subject}__${b.name}`; }
+function qkey(bk, num) { return `${bk}::${num}`; }
+
+function initDefaults() {
+  // No defaults - user adds their own books
+}
+
+// ═══════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('bnav-' + name).classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'todo') renderTodo();
+  if (name === 'add') renderAddTab();
+  if (name === 'list') renderList();
+  if (name === 'setting') renderSetting();
+}
+
+// ═══════════════════════════════
+// HOME
+// ═══════════════════════════════
+function renderHome() {
+  const d = db(), t = today();
+  const allQ = Object.values(d.questions);
+  document.getElementById('hs-total').textContent = allQ.length;
+  document.getElementById('hs-today').textContent = allQ.filter(q => q.nextDate <= t).length;
+  document.getElementById('hs-master').textContent = allQ.filter(q => q.stage >= INTERVALS.length).length;
+
+  const now = new Date();
+  document.getElementById('home-date-label').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+
+  const subjects = {};
+  d.books.forEach(b => {
+    if (!subjects[b.subject]) subjects[b.subject] = {books:[], todayCount:0, totalCount:0, color: b.color};
+    const bk = bkey(b);
+    const total = Object.keys(d.questions).filter(k => k.startsWith(bk+'::')).length;
+    const tday = Object.entries(d.questions).filter(([k,v]) => k.startsWith(bk+'::') && v.nextDate <= t).length;
+    subjects[b.subject].books.push({...b, total, tday});
+    subjects[b.subject].todayCount += tday;
+    subjects[b.subject].totalCount += total;
+  });
+
+  const c = document.getElementById('subject-cards');
+  c.innerHTML = '';
+  Object.entries(subjects).forEach(([subj, data]) => {
+    const div = document.createElement('div');
+    div.className = 'subject-card';
+    div.onclick = () => { switchTab('todo'); };
+    div.innerHTML = `
+      <div class="subject-card-left">
+        <div class="subject-name">${subj}</div>
+        <div class="subject-books">${data.books.map(b=>`${b.name}（${b.total}問）`).join('・')}</div>
+      </div>
+      <div>
+        ${data.todayCount > 0
+          ? `<div class="subject-today">${data.todayCount}問<br><span style="font-size:10px;color:var(--muted)">今日</span></div>`
+          : `<div style="font-size:11px;color:var(--muted)">${data.totalCount > 0 ? '今日なし' : '未登録'}</div>`}
+      </div>`;
+    c.appendChild(div);
+  });
+  if (d.books.length === 0) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-emoji">📚</div>上の＋から問題集を追加してください</div>';
+  }
+}
+
+// ═══════════════════════════════
+// TODO
+// ═══════════════════════════════
+function renderTodo() {
+  const d = db(), t = today();
+  const container = document.getElementById('todo-sections');
+  const startBar = document.getElementById('start-bar');
+  container.innerHTML = '';
+
+  const subjects = {};
+  d.books.forEach(b => {
+    const bk = bkey(b);
+    const qs = Object.entries(d.questions)
+      .filter(([k,v]) => k.startsWith(bk+'::') && v.nextDate <= t)
+      .map(([k,v]) => { const [,num] = k.split('::'); return {key:k, num:parseInt(num), ...v}; })
+      .sort((a,b) => a.num - b.num);
+    if (qs.length === 0) return;
+    if (!subjects[b.subject]) subjects[b.subject] = [];
+    subjects[b.subject].push({book: b, qs});
+  });
+
+  const totalToday = Object.values(d.questions).filter(q => q.nextDate <= t).length;
+  startBar.style.display = totalToday > 0 ? 'block' : 'none';
+  document.getElementById('start-btn').textContent = `今日の問題を開始（${totalToday}問）`;
+
+  if (totalToday === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-emoji">✅</div>今日の問題はありません<br><br>お疲れ様でした！</div>';
+    return;
+  }
+
+  Object.entries(subjects).forEach(([subj, bookGroups]) => {
+    bookGroups.forEach(({book, qs}) => {
+      const section = document.createElement('div');
+      section.className = 'todo-section';
+      section.innerHTML = `
+        <div class="todo-section-header" onclick="toggleTodoSection(this)">
+          <div>
+            <div class="todo-section-title" style="color:${book.color}">${subj} ／ ${book.name}</div>
+            <div class="todo-section-meta">${book.from}〜${book.to}番</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="todo-section-count">${qs.length}問</div>
+            <div class="todo-section-arrow">▼</div>
+          </div>
+        </div>
+        <div class="todo-list">
+          ${qs.map(q => {
+            const sl = SLABELS[Math.min(q.stage||0, SLABELS.length-1)];
+            const sc = SCLS[Math.min(q.stage||0, SCLS.length-1)];
+            return `<div class="todo-item today" onclick="openDetail('${q.key}')">
+              <div class="todo-qnum">${q.num}</div>
+              <div class="todo-stage"><span class="list-stage ${sc}" style="font-size:9px">${sl}</span></div>
+              <div class="todo-next today">${q.format === '4' ? '1234' : '○×'}</div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      container.appendChild(section);
+    });
+  });
+}
+
+function toggleTodoSection(header) {
+  const list = header.nextElementSibling;
+  const arrow = header.querySelector('.todo-section-arrow');
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+// ═══════════════════════════════
+// ADD TAB
+// ═══════════════════════════════
+let selectedBookId = null;
+let selectedFormat = 'ox';
+
+function renderAddTab() {
+  selectedBookId = null;
+  const d = db();
+  const c = document.getElementById('add-book-cards');
+  c.innerHTML = '';
+  document.getElementById('add-form-wrap').style.display = 'none';
+  document.getElementById('add-next-date').value = today();
+
+  if (d.books.length === 0) {
+    c.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:10px">まず設定から問題集を追加してください</div>';
+    return;
+  }
+
+  d.books.forEach(b => {
+    const bk = bkey(b);
+    const registered = Object.keys(d.questions).filter(k => k.startsWith(bk+'::')).length;
+    const btn = document.createElement('div');
+    btn.className = 'book-card-sel';
+    btn.dataset.bid = b.id;
+    btn.innerHTML = `
+      <div>
+        <div class="book-card-subj" style="color:${b.color}">${b.subject}</div>
+        <div class="book-card-name">${b.name}</div>
+        <div class="book-card-range">${b.from}〜${b.to}番 ／ ${registered}問登録済</div>
+      </div>
+      <div class="book-card-check">✓</div>`;
+    btn.onclick = () => selectAddBook(b.id);
+    c.appendChild(btn);
+  });
+}
+
+function selectAddBook(bid) {
+  selectedBookId = bid;
+  document.querySelectorAll('.book-card-sel').forEach(b => {
+    b.classList.toggle('selected', b.dataset.bid === bid);
+  });
+  document.getElementById('add-form-wrap').style.display = 'block';
+  const d = db();
+  const book = d.books.find(b => b.id === bid);
+  if (book) {
+    document.getElementById('add-from').value = book.from;
+    document.getElementById('add-to').value = book.to;
+    document.getElementById('add-from').min = book.from;
+    document.getElementById('add-to').max = 1000;
+  }
+}
+
+function setFormat(f) {
+  selectedFormat = f;
+  document.getElementById('fmt-ox').classList.toggle('active', f === 'ox');
+  document.getElementById('fmt-4').classList.toggle('active', f === '4');
+}
+
+function registerQuestions() {
+  if (!selectedBookId) { alert('問題集を選択してください'); return; }
+  const d = db();
+  const book = d.books.find(b => b.id === selectedBookId);
+  if (!book) return;
+  const from = parseInt(document.getElementById('add-from').value);
+  const to = parseInt(document.getElementById('add-to').value);
+  const stage = Math.min(parseInt(document.getElementById('add-stage').value) || 0, INTERVALS.length);
+  const nextDate = document.getElementById('add-next-date').value || today();
+  if (!from || !to || from > to || to > 1000) { alert('範囲を正しく入力してください（1〜1000）'); return; }
+
+  const bk = bkey(book);
+  let added = 0;
+  for (let i = from; i <= to; i++) {
+    const key = qkey(bk, i);
+    if (!d.questions[key]) {
+      d.questions[key] = { stage, nextDate, addedDate: today(), format: selectedFormat, history: [] };
+      added++;
+    }
+  }
+  save(d);
+  alert(`${added}問を登録しました（スキップ: ${(to - from + 1) - added}問）`);
+  renderAddTab();
+  renderHome();
+}
+
+// ═══════════════════════════════
+// LIST
+// ═══════════════════════════════
+let listBookFilter = 'all', listStatusFilter = 'all';
+
+function renderListBookFilters() {
+  const d = db();
+  const c = document.getElementById('list-book-filters');
+  c.innerHTML = '';
+  const allBtn = makeFilterBtn('すべて', () => { listBookFilter='all'; refreshListFilters(allBtn); renderList(); });
+  allBtn.classList.add('active');
+  c.appendChild(allBtn);
+  d.books.forEach(b => {
+    const btn = makeFilterBtn(`${b.subject}／${b.name}`, () => { listBookFilter=b.id; refreshListFilters(btn); renderList(); });
+    c.appendChild(btn);
+  });
+}
+function makeFilterBtn(text, fn) {
+  const btn = document.createElement('button');
+  btn.className = 'filt'; btn.textContent = text; btn.onclick = fn;
+  return btn;
+}
+function refreshListFilters(active) {
+  document.querySelectorAll('#list-book-filters .filt').forEach(b => b.classList.remove('active'));
+  active.classList.add('active');
+}
+function filterStatus(f, btn) {
+  listStatusFilter = f;
+  document.querySelectorAll('#tab-list .list-filters:nth-child(2) .filt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+function renderList() {
+  const d = db(), t = today();
+  let entries = Object.entries(d.questions).map(([k,v]) => {
+    const [bkPart, numStr] = k.split('::');
+    const [subj, bname] = bkPart.split('__');
+    const book = d.books.find(b => bkey(b) === bkPart);
+    return { key:k, num:parseInt(numStr), subj, bname, color: book?.color||'#999', bid: book?.id, ...v };
+  });
+  if (listBookFilter !== 'all') entries = entries.filter(e => e.bid === listBookFilter);
+  if (listStatusFilter === 'today') entries = entries.filter(e => e.nextDate <= t);
+  else if (listStatusFilter === 'new') entries = entries.filter(e => (e.stage||0) === 0);
+  else if (listStatusFilter === 'mastered') entries = entries.filter(e => (e.stage||0) >= INTERVALS.length);
+  entries.sort((a,b) => a.key.localeCompare(b.key));
+  document.getElementById('list-count') && (document.getElementById('list-count').textContent = `${entries.length}問`);
+
+  const body = document.getElementById('list-body');
+  if (entries.length === 0) { body.innerHTML = '<div class="empty-state"><div class="empty-emoji">🔍</div>該当なし</div>'; return; }
+
+  if (listStatusFilter === 'history') {
+    body.innerHTML = '';
+    entries.forEach(e => {
+      if (!e.history || e.history.length === 0) return;
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.onclick = () => openDetail(e.key);
+      const lastH = e.history[e.history.length-1];
+      item.innerHTML = `
+        <div class="list-num">${e.num}</div>
+        <div class="list-info">
+          <div class="list-book">${e.subj} ／ ${e.bname}</div>
+          <div style="font-size:11px;color:var(--muted)">最終: ${fmtDate(lastH.date)} ${lastH.result === 'o' ? '○' : '×'} ／ 計${e.history.length}回</div>
+        </div>
+        <div class="list-arrow">›</div>`;
+      body.appendChild(item);
+    });
+    if (body.innerHTML === '') body.innerHTML = '<div class="empty-state"><div class="empty-emoji">📊</div>履歴なし</div>';
+    return;
+  }
+
+  body.innerHTML = '';
+  entries.forEach(e => {
+    const isToday = e.nextDate <= t;
+    const sl = SLABELS[Math.min(e.stage||0, SLABELS.length-1)];
+    const sc = SCLS[Math.min(e.stage||0, SCLS.length-1)];
+    const hasContent = e.question ? '📝' : '';
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.onclick = () => openDetail(e.key);
+    item.innerHTML = `
+      <div class="list-num" style="color:${e.color}">${e.num}</div>
+      <div class="list-info">
+        <div class="list-book">${e.subj} ／ ${e.bname}</div>
+        <span class="list-stage ${sc}">${sl}</span>
+        <span class="list-next ${isToday?'today':''}">${isToday ? '今日！' : '次回 '+fmtDate(e.nextDate)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${hasContent ? '<span class="has-content">📝</span>' : ''}
+        <div class="list-arrow">›</div>
+      </div>`;
+    body.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════
+// SETTING
+// ═══════════════════════════════
+function renderSetting() {
+  const d = db();
+  const c = document.getElementById('setting-books');
+  c.innerHTML = '';
+  if (d.books.length === 0) { c.innerHTML = '<div style="font-size:13px;color:var(--muted);margin-bottom:12px">問題集がありません</div>'; return; }
+  d.books.forEach(b => {
+    const bk = bkey(b);
+    const cnt = Object.keys(d.questions).filter(k => k.startsWith(bk+'::')).length;
+    const item = document.createElement('div');
+    item.className = 'sbook-item';
+    item.innerHTML = `
+      <div>
+        <div class="sbook-name" style="color:${b.color}">${b.subject}</div>
+        <div class="sbook-meta">${b.name}（${b.from}〜${b.to}番 ／ ${cnt}問登録済）</div>
+      </div>
+      <div class="sbook-btns">
+        <button class="btn btn-sm btn-outline" onclick="openEditBook('${b.id}')">Edit</button>
+      </div>`;
+    c.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════
+// BOOK CRUD
+// ═══════════════════════════════
+function saveBook() {
+  const subj = document.getElementById('mb-subj').value.trim();
+  const name = document.getElementById('mb-name').value.trim();
+  const from = parseInt(document.getElementById('mb-from').value);
+  const to = parseInt(document.getElementById('mb-to').value);
+  if (!subj || !name || !from || !to || from > to) { alert('すべて入力してください'); return; }
+  const d = db();
+  const used = d.books.map(b => b.color);
+  const color = BOOK_COLORS.find(c => !used.includes(c)) || BOOK_COLORS[d.books.length % BOOK_COLORS.length];
+  d.books.push({ id: 'b' + Date.now(), subject: subj, name, from, to, color });
+  save(d);
+  closeModal('modal-add-book');
+  ['mb-subj','mb-name','mb-from','mb-to'].forEach(id => document.getElementById(id).value = '');
+  renderHome(); renderSetting(); renderAddTab();
+}
+
+function openEditBook(bid) {
+  const d = db();
+  const b = d.books.find(x => x.id === bid);
+  if (!b) return;
+  document.getElementById('eb-id').value = bid;
+  document.getElementById('eb-subj').value = b.subject;
+  document.getElementById('eb-name').value = b.name;
+  document.getElementById('eb-from').value = b.from;
+  document.getElementById('eb-to').value = b.to;
+  openModal('modal-edit-book');
+}
+
+function updateBook() {
+  const bid = document.getElementById('eb-id').value;
+  const d = db();
+  const b = d.books.find(x => x.id === bid);
+  if (!b) return;
+  b.subject = document.getElementById('eb-subj').value.trim();
+  b.name = document.getElementById('eb-name').value.trim();
+  b.from = parseInt(document.getElementById('eb-from').value);
+  b.to = parseInt(document.getElementById('eb-to').value);
+  if (!b.subject || !b.name || !b.from || !b.to) { alert('すべて入力してください'); return; }
+  save(d);
+  closeModal('modal-edit-book');
+  renderHome(); renderSetting(); renderAddTab();
+}
+
+function deleteBook() {
+  const bid = document.getElementById('eb-id').value;
+  if (!confirm('この問題集と登録した問題をすべて削除しますか？')) return;
+  const d = db();
+  const b = d.books.find(x => x.id === bid);
+  if (!b) return;
+  const bk = bkey(b);
+  Object.keys(d.questions).forEach(k => { if (k.startsWith(bk+'::')) delete d.questions[k]; });
+  d.books = d.books.filter(x => x.id !== bid);
+  save(d);
+  closeModal('modal-edit-book');
+  renderHome(); renderSetting(); renderAddTab();
+}
+
+function resetAll() {
+  if (!confirm('全データを削除しますか？')) return;
+  localStorage.removeItem('lockin_v1');
+  location.reload();
+}
+
+// ═══════════════════════════════
+// DRILL
+// ═══════════════════════════════
+let DQ = [], DI = 0, DOK = 0, DNG = 0, D_ANSWERED = false;
+
+function startDrillToday() {
+  const d = db(), t = today();
+  DQ = Object.entries(d.questions)
+    .filter(([,v]) => v.nextDate <= t)
+    .map(([k,v]) => ({ key:k, ...v }))
+    .sort((a,b) => a.key.localeCompare(b.key));
+  if (DQ.length === 0) return;
+  DI = 0; DOK = 0; DNG = 0;
+  document.getElementById('drill-overlay').classList.add('open');
+  showDrillQ();
+}
+
+function showDrillQ() {
+  if (DI >= DQ.length) { closeDrill(); renderTodo(); return; }
+  D_ANSWERED = false;
+  const q = DQ[DI];
+  const d = db();
+  const [bkPart, numStr] = q.key.split('::');
+  const [subj, bname] = bkPart.split('__');
+  const book = d.books.find(b => bkey(b) === bkPart);
+  const color = book?.color || '#999';
+
+  document.getElementById('drill-q-view').style.display = 'block';
+  document.getElementById('drill-result-view').style.display = 'none';
+  document.getElementById('drill-prog-label').textContent = `${DI+1} / ${DQ.length}`;
+  document.getElementById('drill-prog-fill').style.width = `${(DI/DQ.length)*100}%`;
+  document.getElementById('dv-context').textContent = subj;
+  document.getElementById('dv-book').textContent = bname;
+  document.getElementById('dv-qnum').textContent = `問 ${numStr}`;
+
+  const stage = q.stage || 0;
+  document.getElementById('dv-stage').textContent = `Stage ${stage} · ${SLABELS[Math.min(stage, SLABELS.length-1)]}`;
+
+  // Question box
+  const qbox = document.getElementById('dv-qbox');
+  if (q.question) {
+    qbox.innerHTML = `<div class="drill-question-text">${q.question}</div>`;
+  } else {
+    qbox.innerHTML = `<div class="drill-no-content">問題文未登録<br><span style="font-size:11px;opacity:.6">問題集で確認してください</span></div>`;
+  }
+
+  // Answer buttons
+  const ans = document.getElementById('dv-answers');
+  ans.innerHTML = '';
+  const fmt = q.format || 'ox';
+  if (fmt === 'ox') {
+    const wrap = document.createElement('div');
+    wrap.className = 'ans-btn-ox';
+    wrap.innerHTML = `
+      <button class="btn-o" onclick="drillAnswer('o')">○</button>
+      <button class="btn-x" onclick="drillAnswer('x')">✕</button>`;
+    ans.appendChild(wrap);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.className = 'drill-ans-4';
+    [1,2,3,4].forEach(n => {
+      const btn = document.createElement('button');
+      btn.className = 'ans-btn';
+      const choiceText = q[`choice${n}`] || '';
+      btn.textContent = `${n}${choiceText ? '  ' + choiceText : ''}`;
+      btn.onclick = () => drillAnswer(String(n));
+      wrap.appendChild(btn);
+    });
+    ans.appendChild(wrap);
+  }
+}
+
+function drillAnswer(ans) {
+  if (D_ANSWERED) return;
+  D_ANSWERED = true;
+  const q = DQ[DI];
+  const d = db();
+  const qdata = d.questions[q.key];
+  if (!qdata) return;
+
+  const correct = q.format === '4'
+    ? (ans === String(qdata.correctAnswer || '1'))
+    : (ans === 'o');
+
+  // For ○× format, record as given; for 4-choice need correct answer set
+  const resultSymbol = correct ? 'o' : 'x';
+  if (!qdata.history) qdata.history = [];
+  qdata.history.push({ date: today(), result: resultSymbol });
+
+  if (correct) {
+    qdata.stage = Math.min((qdata.stage||0) + 1, INTERVALS.length);
+    const iv = INTERVALS[Math.min(qdata.stage-1, INTERVALS.length-1)];
+    qdata.nextDate = addDays(today(), iv);
+    DOK++;
+  } else {
+    qdata.stage = 0;
+    qdata.nextDate = addDays(today(), 1);
+    DNG++;
+  }
+  save(d);
+
+  // Flash
+  const fl = document.getElementById('flash');
+  fl.textContent = correct ? '○' : '✕';
+  fl.className = `flash show ${correct ? 'cf' : 'wf'}`;
+  setTimeout(() => fl.className = 'flash', 400);
+
+  // Show result
+  document.getElementById('drill-q-view').style.display = 'none';
+  const rv = document.getElementById('drill-result-view');
+  rv.style.display = 'flex';
+  document.getElementById('rv-badge').textContent = correct ? '○' : '✕';
+  document.getElementById('rv-label').textContent = correct ? '正解！' : '不正解';
+  document.getElementById('rv-label').style.color = correct ? '#4fc3a1' : '#e05c5c';
+  const iv = correct ? INTERVALS[Math.min(qdata.stage-1, INTERVALS.length-1)] : 1;
+  document.getElementById('rv-next').textContent = `次回: ${iv}日後（${fmtDate(qdata.nextDate)}）`;
+
+  const expEl = document.getElementById('rv-exp');
+  if (qdata.explanation) {
+    expEl.innerHTML = `<div class="result-explanation-text">${qdata.explanation}</div>`;
+  } else {
+    expEl.innerHTML = `<div class="result-no-exp" style="font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:20px">解説未登録</div>`;
+  }
+}
+
+function nextQuestion() {
+  DI++;
+  showDrillQ();
+}
+
+function closeDrill() {
+  document.getElementById('drill-overlay').classList.remove('open');
+  renderTodo(); renderHome();
+}
+
+// ═══════════════════════════════
+// DETAIL OVERLAY
+// ═══════════════════════════════
+let currentDetailKey = null;
+
+function openDetail(key) {
+  currentDetailKey = key;
+  const d = db();
+  const q = d.questions[key];
+  if (!q) return;
+  const [bkPart, numStr] = key.split('::');
+  const [subj, bname] = bkPart.split('__');
+  document.getElementById('detail-title').textContent = `${subj} ${bname} 問${numStr}`;
+
+  const body = document.getElementById('detail-body');
+  const fmt = q.format || 'ox';
+  const history = (q.history || []).slice().reverse();
+
+  body.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">ステータス</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="list-stage ${SCLS[Math.min(q.stage||0,SCLS.length-1)]}" style="font-size:12px;padding:4px 12px">${SLABELS[Math.min(q.stage||0,SLABELS.length-1)]}</span>
+        <span style="font-size:13px;color:var(--muted);padding:4px 0">次回: ${fmtDate(q.nextDate)}</span>
+        <span style="font-size:13px;color:var(--muted);padding:4px 0">形式: ${fmt === 'ox' ? '○×' : '1234'}</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">問題文</div>
+      <textarea class="detail-textarea" id="de-question" placeholder="問題文を入力（任意）" rows="4">${q.question||''}</textarea>
+    </div>
+
+    ${fmt === '4' ? `
+    <div class="detail-section">
+      <div class="detail-section-title">選択肢</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${[1,2,3,4].map(n => `
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;min-width:20px">${n}</span>
+            <input class="inp" type="text" id="de-c${n}" placeholder="選択肢${n}" value="${q['choice'+n]||''}" style="flex:1">
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:12px">
+        <label class="inp-label">正解番号</label>
+        <input class="inp" type="number" id="de-correct" min="1" max="4" placeholder="1〜4" value="${q.correctAnswer||''}">
+      </div>
+    </div>` : ''}
+
+    <div class="detail-section">
+      <div class="detail-section-title">解説</div>
+      <textarea class="detail-textarea" id="de-explanation" placeholder="解説を入力（任意）" rows="4">${q.explanation||''}</textarea>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title" style="display:flex;justify-content:space-between">
+        <span>回答履歴</span>
+        <span style="font-size:11px;color:var(--muted)">${history.length}回</span>
+      </div>
+      ${history.length === 0
+        ? '<div class="history-empty">まだ回答していません</div>'
+        : `<div class="history-list">${history.map(h => `
+            <div class="history-item">
+              <div class="history-date">${fmtDate(h.date)}</div>
+              <div class="history-result ${h.result}">${h.result === 'o' ? '○' : '×'}</div>
+            </div>`).join('')}</div>`}
+    </div>`;
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function saveDetail() {
+  if (!currentDetailKey) return;
+  const d = db();
+  const q = d.questions[currentDetailKey];
+  if (!q) return;
+  q.question = document.getElementById('de-question')?.value.trim() || '';
+  q.explanation = document.getElementById('de-explanation')?.value.trim() || '';
+  if (q.format === '4') {
+    [1,2,3,4].forEach(n => { q['choice'+n] = document.getElementById('de-c'+n)?.value.trim() || ''; });
+    q.correctAnswer = document.getElementById('de-correct')?.value || '';
+  }
+  save(d);
+  closeDetail();
+  renderList();
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  currentDetailKey = null;
+}
+
+// ═══════════════════════════════
+// HISTORY SHEET
+// ═══════════════════════════════
+function openHistorySheet() {
+  if (!DQ[DI-1]) return;
+  const key = DQ[DI-1]?.key || (DI > 0 ? DQ[DI-1]?.key : null);
+  const q = DQ[Math.max(DI-1,0)];
+  if (!q) return;
+  const d = db();
+  const qdata = d.questions[q.key];
+  const [,numStr] = q.key.split('::');
+  document.getElementById('hs-title').textContent = `問${numStr} 回答履歴`;
+  const history = (qdata?.history || []).slice().reverse();
+  const body = document.getElementById('hs-body');
+  body.innerHTML = history.length === 0
+    ? '<div class="history-empty">履歴なし</div>'
+    : `<div class="history-list">${history.map(h => `
+        <div class="history-item">
+          <div class="history-date">${fmtDate(h.date)}</div>
+          <div class="history-result ${h.result}">${h.result === 'o' ? '○' : '×'}</div>
+        </div>`).join('')}</div>`;
+  document.getElementById('history-sheet').classList.add('open');
+}
+
+function closeHistorySheet() {
+  document.getElementById('history-sheet').classList.remove('open');
+}
+
+// ═══════════════════════════════
+// MODAL
+// ═══════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+initDefaults();
+renderHome();
+renderListBookFilters();
+</script>
+</body>
+</html>
